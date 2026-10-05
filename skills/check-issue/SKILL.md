@@ -19,10 +19,18 @@ The arguments (`$ARGUMENTS`, or the user's message where nothing is substituted)
 | none, "check", "analyze", "look into" | Analysis only: code, tests and docs stay untouched. Memory notes your instructions ask for are fine; CLAUDE.md updates go under **Next** as proposals. |
 | a question ("how come this is a bug?") | Analysis; the verdict answers that question first |
 | a constraint ("backend only") | Honor it in the analysis and proposed fix |
-| "fix", "work on it", "implement" | Analysis, then implement under the repo's own rules |
+| "fix", "work on it", "implement" | Analysis, then the branch question below, then implement under the repo's own rules |
 | "commit", "push", "open a PR" | Exactly those git/forge actions, nothing more |
 
 Commenting on, labelling, assigning, closing or editing the issue happens only when the free text asks for it.
+
+**Branch question.** Before the first edit of any implementation, whether it was asked for after the link or in a reply to the report, ask this once, as a multiple-choice question when the harness has one. Skip it when the user already chose a new or current branch, or named a target branch:
+
+> Create a new branch `<type>/<n>-<slug>` from `origin/<default-branch>`, or work on the current branch `<branch>`?
+
+- Resolve the actual default branch as described under **Baseline**. Name the new branch after the repo's existing ones (`git branch -r`): `fix/` for a bug, `feat/` for a feature, when that is the pattern. Honor an exact branch name supplied by the user.
+- Add what bears on the choice: the current branch is already merged or behind the default branch; uncommitted changes that could move with or block a switch; a merge or rebase in progress, which blocks one.
+- The answer supplies the user's branch preference for the repo's branch rules. For an authorized implementation on a new branch, fetch the default branch before creating it from `origin/<default-branch>`, preserving existing work and following the repo's branch/worktree instructions.
 
 ## 1. Read everything on the issue
 
