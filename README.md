@@ -1,6 +1,6 @@
 # Agentic Flow
 
-Two reusable skills for Codex and Claude Code:
+Reusable skills for Codex and Claude Code, plus a Codex subagent setup.
 
 | Skill | Purpose |
 | --- | --- |
@@ -50,6 +50,54 @@ Claude Code's [skill documentation](https://code.claude.com/docs/en/skills) expl
 The helper downloads same-host Gitea attachments through `tea`. GitHub and external-host images are explicitly marked `NOT FETCHED`; the assistant must inspect them using another authorized tool or disclose that they remain unread. Custom GitHub Enterprise hosts need an available authenticated read-only alternative.
 
 No credentials or personal account defaults are bundled. `daily-standup` discovers the current user's identity and timezone; you can specify both in your request.
+
+## Codex subagent setup
+
+The [codex](codex) directory contains five role configurations, a portable [config fragment](codex/config.toml), and the [delegation policy](codex/AGENTS.md). This setup uses `gpt-6-luna` for every subagent:
+
+| Role | Work | Reasoning | Configured sandbox |
+| --- | --- | --- | --- |
+| [default](codex/agents/default.toml) | General-purpose fallback | `xhigh` | Inherits the parent |
+| [explorer](codex/agents/explorer.toml) | Focused repository investigation | `xhigh` | `read-only` |
+| [worker](codex/agents/worker.toml) | Bounded implementation and validation | `xhigh` | `workspace-write` |
+| [reasoner](codex/agents/reasoner.toml) | Difficult behavior and architecture decisions | `max` | `read-only` |
+| [reviewer](codex/agents/reviewer.toml) | Independent technical review | `max` | `read-only` |
+
+The primary agent owns decisions, integration, final validation, and the final response. It delegates when useful, keeps agent work one level deep, and uses `reasoner` or `reviewer` only when the user explicitly requests that role. The config caps concurrently open subagent threads at five, excluding the primary.
+
+### Install the subagents
+
+From this repository's root, copy the role files into your Codex home. These commands skip existing role files:
+
+```sh
+agentic_codex_dir="${CODEX_HOME:-$HOME/.codex}"
+mkdir -p "$agentic_codex_dir/agents"
+for role in default explorer worker reasoner reviewer; do
+  if [ -e "$agentic_codex_dir/agents/$role.toml" ]; then
+    echo "Already configured: $role; review local changes before replacing it."
+  else
+    cp "codex/agents/$role.toml" "$agentic_codex_dir/agents/$role.toml"
+  fi
+done
+```
+
+Merge [codex/config.toml](codex/config.toml) into your existing `$CODEX_HOME/config.toml` (normally `~/.codex/config.toml`). Update existing `[features]`, `[agents]`, and role tables rather than appending duplicate tables. The `./agents/` paths resolve relative to that config file, so they work after copying the roles into the same Codex home. Keep your existing main-agent model, authentication, providers, plugins, and project settings.
+
+Merge the marked section from [codex/AGENTS.md](codex/AGENTS.md) into your personal `$CODEX_HOME/AGENTS.md`, or into a project's `AGENTS.md` when the policy should apply only there. Preserve other instructions and replace an existing section with the same markers rather than duplicating it. Restart Codex after changing the setup.
+
+Use a Codex release that supports these custom-agent settings. If your account does not offer `gpt-6-luna` or the configured effort, select supported values in the config fragment and affected role files. Role files set their own model and effort, so changing only the `[agents]` defaults does not change those roles. Parent runtime permission overrides can take precedence over the sandbox values in this table.
+
+The [official OpenAI subagent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents) explains custom roles and runtime overrides. The [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) documents role config paths and thread limits. These TOML files are for Codex; the two skills above can also be used in Claude Code.
+
+### Use the subagents
+
+```text
+Use an explorer to locate the export flow, then a worker to implement the agreed fix.
+Use a reasoner to compare these architecture options.
+Use a reviewer to check this branch for regressions and missing tests.
+```
+
+Use only the roles needed for the task. The delegation policy keeps simple work with the primary agent.
 
 ## Use
 

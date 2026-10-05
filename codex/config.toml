@@ -1,0 +1,25 @@
+[features]
+multi_agent = true
+multi_agent_v2 = false
+
+[agents]
+enabled = true
+default_subagent_model = "gpt-6-luna"
+default_subagent_reasoning_effort = "xhigh"
+max_concurrent_threads_per_session = 5
+max_depth = 1
+
+[agents.default]
+config_file = "./agents/default.toml"
+
+[agents.explorer]
+config_file = "./agents/explorer.toml"
+
+[agents.worker]
+config_file = "./agents/worker.toml"
+
+[agents.reasoner]
+config_file = "./agents/reasoner.toml"
+
+[agents.reviewer]
+config_file = "./agents/reviewer.toml"
