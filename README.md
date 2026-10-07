@@ -5,6 +5,7 @@ Reusable skills for Codex and Claude Code, plus a Codex subagent setup.
 | Skill | Purpose |
 | --- | --- |
 | [check-issue](skills/check-issue/SKILL.md) | Analyze GitHub or Gitea issues using their text, comments, available images, and repository code. Analysis is the default; implementation requires a request to fix the issue. |
+| [create-issue](skills/create-issue/SKILL.md) | Turn requests and findings into grounded GitHub or Gitea issue drafts, then create, comment on, or update issues after the required user approval. |
 | [daily-standup](skills/daily-standup/SKILL.md) | Produce a copyable Yesterday/Today standup from verified personal work across local Git repositories, GitHub, and Gitea. |
 
 ## Install
@@ -14,7 +15,8 @@ Reusable skills for Codex and Claude Code, plus a Codex subagent setup.
 Ask Codex:
 
 ```text
-Use $skill-installer to install skills/check-issue and skills/daily-standup
+Use $skill-installer to install skills/check-issue, skills/create-issue,
+and skills/daily-standup
 from aldhipradana/agentic-flow on the master branch.
 ```
 
@@ -28,7 +30,7 @@ Clone the repository, then copy the complete skill directories into your persona
 git clone https://github.com/aldhipradana/agentic-flow.git
 cd agentic-flow
 mkdir -p "$HOME/.claude/skills"
-for skill in check-issue daily-standup; do
+for skill in check-issue create-issue daily-standup; do
   if [ -e "$HOME/.claude/skills/$skill" ]; then
     echo "Already installed: $skill; review local changes before replacing it."
   else
@@ -39,12 +41,16 @@ done
 
 For manual Codex installation, use `${CODEX_HOME:-$HOME/.codex}/skills` as the destination. Project installations can use `.claude/skills` or the project's supported Codex skills directory. Keep `check-issue/fetch_issue.py` beside its `SKILL.md`.
 
+`create-issue` requires `check-issue` beside it: install both complete skill directories under the same skills directory. Keep `create-issue/post_issues.py` beside its `SKILL.md`.
+If you previously installed `check-issue`, update its helper from this repository before using `create-issue`; the earlier version did not provide `forge()`. Review local customizations before replacing an existing skill.
+
 Claude Code's [skill documentation](https://code.claude.com/docs/en/skills) explains personal and project installation locations.
 
 ## Requirements
 
 - A local repository checkout and an assistant with shell access. Image inspection needs an available image tool or user-provided attachments.
 - Git and Python 3 for `check-issue`. The helper uses only Python's standard library.
+- Python 3.9+ for `create-issue`, with the sibling `check-issue` helper that provides `forge()`. Its posting helper also uses only the standard library.
 - An installed and authenticated `gh` CLI for GitHub, or `tea` with a matching saved login for Gitea. The installed `tea` must support `login list` and `api`; check its `--help`. Local Git evidence remains usable for standups when a forge CLI is unavailable.
 
 The helper downloads same-host Gitea attachments through `tea`. GitHub and external-host images are explicitly marked `NOT FETCHED`; the assistant must inspect them using another authorized tool or disclose that they remain unread. Custom GitHub Enterprise hosts need an available authenticated read-only alternative.
@@ -87,7 +93,7 @@ Merge the marked section from [codex/AGENTS.md](codex/AGENTS.md) into your perso
 
 Use a Codex release that supports these custom-agent settings. If your account does not offer `gpt-6-luna` or the configured effort, select supported values in the config fragment and affected role files. Role files set their own model and effort, so changing only the `[agents]` defaults does not change those roles. Parent runtime permission overrides can take precedence over the sandbox values in this table.
 
-The [official OpenAI subagent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents) explains custom roles and runtime overrides. The [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) documents role config paths and thread limits. These TOML files are for Codex; the two skills above can also be used in Claude Code.
+The [official OpenAI subagent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents) explains custom roles and runtime overrides. The [configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) documents role config paths and thread limits. These TOML files are for Codex; the skills above can also be used in Claude Code.
 
 ### Use the subagents
 
@@ -105,19 +111,24 @@ In Codex:
 
 ```text
 $check-issue https://github.com/owner/repo/issues/123
+$create-issue Draft an issue for the export findings in this conversation
 $daily-standup — use Asia/Makassar; today I plan to finish the export flow
 ```
 
-In Claude Code, invoke `/check-issue` or `/daily-standup` with the same arguments. Ordinary requests such as “check this issue” or “generate my daily standup” can also select the skills.
+In Claude Code, invoke `/check-issue`, `/create-issue`, or `/daily-standup` with the same arguments. Ordinary requests such as “check this issue”, “draft an issue for this”, or “generate my daily standup” can also select the skills.
 
 Issue analysis and standup generation leave repository files and forge records untouched. To implement an issue fix, request it explicitly; publishing, commenting, and other external actions need their own authorization.
 
+`create-issue` shows drafts before posting new issues unless you explicitly request “create now” or “post directly”. Comments and updates to existing issues require explicit approval. A dry run checks drafts and references without posting; keep its `.posted.json` progress file when retrying a partially completed batch.
+
 ## Development
 
-Run the helper's regression tests from the repository root:
+Run the helpers' regression tests from the repository root:
 
 ```sh
 python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s skills/create-issue -p 'test_*.py' -v
 ```
 
 Tests cover remote/reference parsing, GitHub comment pagination, API errors, attachment host boundaries, and the saved evidence/digest.
+The posting tests use an in-memory forge and cover retry identity, duplicate prevention, body corrections, cross-repository links, and dry-run rejection of changed targets.

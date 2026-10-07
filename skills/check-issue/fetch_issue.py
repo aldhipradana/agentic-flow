@@ -98,11 +98,18 @@ def assets(item):
     return [(a["name"], a["browser_download_url"]) for a in item.get("assets") or []]
 
 
-def fetch(host, owner, repo, n):
+def forge(host):
+    """('gh', None) for GitHub hosts, else ('tea', <tea login for host>)."""
     if host == "github.com" or host.endswith(".ghe.com"):
+        return "gh", None
+    return "tea", tea_login(host)
+
+
+def fetch(host, owner, repo, n):
+    cli, login = forge(host)
+    if cli == "gh":
         base = f"repos/{owner}/{repo}/issues/{n}"
         return "gh", None, gh_get(host, base), gh_get(host, base + "/comments")
-    login = tea_login(host)
     base = f"/repos/{owner}/{repo}/issues/{n}"
     return "tea", login, tea_get(login, base), tea_get(login, base + "/comments")
 
