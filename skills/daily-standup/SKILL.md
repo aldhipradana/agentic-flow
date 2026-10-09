@@ -30,7 +30,7 @@ Use `tea` for Gitea and `gh` for GitHub when installed and authenticated. Inspec
 - **Issues:** Inspect substantive activity by the user in the interval: investigation findings, fixes, testing results, or linked attributable commits/PRs. Assignment, issue authorship, issue closure, labels, and status transitions alone prove neither completion nor contribution. Include a completed investigation when its documented result is useful, but describe a proposed fix or unfinished implementation as ongoing work.
 - **Current work:** Read branch/status and relevant working-tree diffs to identify clear ongoing work for Today. Uncommitted changes are not automatically completed or attributable; relate them to verified user activity or an explicit user plan.
 
-Follow pagination and CLI result limits until relevant interval activity is covered. Do not skip a repository's issue/PR evidence just because it has no local commits in the interval. Retain each supporting commit's repository and full hash, and the evidence for any related issue, so every claimed outcome and displayed reference can be verified.
+Follow pagination and CLI result limits until relevant interval activity is covered. Do not skip a repository's issue/PR evidence just because it has no local commits in the interval. Retain each supporting commit's repository and full hash, plus related issue/PR numbers, browser URLs, and evidence linking them to the work, so every claimed outcome and displayed reference can be verified.
 
 ## Select and summarize
 
@@ -38,7 +38,9 @@ Include only attributable, substantive outcomes. Exclude merge commits, Git stas
 
 Group related commits into one outcome and combine a commit, issue, and PR describing the same work into one bullet. Write plain, concise English instead of copying commit titles. Match the claim to the evidence: implemented does not imply deployed, validated, or released.
 
-For each completed-work bullet, append the short hash or hashes of its supporting non-merge commits when available. Obtain abbreviations from the repository (for example, `git rev-parse --short HASH`) or verified API commit SHAs; use enough characters to distinguish the commits. Include the supporting hashes for grouped work once each, without adding unrelated or excluded commits. Add a related issue number when the connection is verified by an explicit commit/PR reference, issue link, or equivalent source evidence; similarity in titles alone is insufficient. Verify that the reference identifies an issue rather than assuming a PR number is an issue number. If issue numbers could be ambiguous across repositories, identify the repository, such as `owner/repo issue #123`. Never invent a commit, issue, or association. Omit unavailable reference components and omit empty parentheses when neither is available; substantive issue work can still be included without a commit. Planned work under Today does not need a commit hash.
+For each completed-work bullet, append the short hash or hashes of its supporting non-merge commits when available. Obtain abbreviations from the repository (for example, `git rev-parse --short HASH`) or verified API commit SHAs; use enough characters to distinguish the commits. Include the supporting hashes for grouped work once each, without adding unrelated or excluded commits. Substantive issue work can still be included without a commit. Planned work under Today does not need a commit hash.
+
+For both Yesterday and Today bullets, append related issue and PR numbers with their full browser URLs when available, including both when both exist. Verify each connection through explicit commit/PR references, linked issues, matching PR commits, or equivalent source evidence; similarity in titles alone is insufficient. Use canonical browser URLs returned by the forge or verified source links, preserving the actual host, including GitHub Enterprise or Gitea; API endpoints are not browser URLs. Format references as `issue #123: <issue URL>` and `PR #456: <PR URL>` in plain text, separated by semicolons alongside any commit hashes. Include each reference once per bullet and keep a verified number if its URL is unavailable. Verify whether each record is an issue or PR. If numbers could be ambiguous across repositories, identify the repository, such as `owner/repo issue #123`. Never invent a commit, issue, PR, URL, or association. Omit unavailable reference components and empty parentheses.
 
 Yesterday holds completed outcomes in the selected lookback period, including Friday through Sunday on Monday; keep the heading Yesterday. Today holds planned or ongoing work. Prefer plans explicitly provided by the user. Otherwise infer only from clear current work or recently active issues with substantive user involvement and a concrete unfinished next step. An open issue, assignment, unmerged branch, or waiting PR alone is not a plan; do not dump the backlog or invent tasks.
 
@@ -50,10 +52,10 @@ Always return the full standup in one copyable fenced text block with exactly th
 DAILY STANDUP <day> <month> <year>
 
 Yesterday:
-- <completed work> (issue #<number> if verified; <short commit hash(es)> if available)
+- <completed work> (<available issue/PR references and short commit hash(es)>)
 
 Today:
-- <current plan>
+- <current plan> (<available issue/PR references>)
 ```
 
 If no reliable plan exists, put `- Plan not yet provided.` under Today and ask the user for today's plan immediately after the block, while still providing Yesterday. After they answer, return the entire updated block. If no completed work can be verified, say `- No completed work verified for this period.` under Yesterday; do not claim the user did nothing. Keep any material coverage limits, range clarification, or identity question brief and outside the block. Add no extra sections inside it.
