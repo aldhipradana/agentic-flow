@@ -6,6 +6,7 @@ description: >-
   findings or a design in the conversation, an analysis doc or a check-issue report;
   including one ask split across repos, a batch of findings, and rewriting or
   commenting on an issue that already exists.
+argument-hint: "[items | doc path | issue link] [simple] [create now]"
 ---
 
 # Create issue
@@ -82,7 +83,7 @@ Then wait at the gate. While the user questions the content, revise the drafts: 
 |---|---|---|
 | Tracking | "simple", "just to track" | what and why in 1–2 sentences, 3–5 bullets of what's needed, a design link when pushed. Keeps what the implementer needs to start: the contract, the scope. |
 | Standard | most bugs and small features (default) | header line, Problem, Fix, Checked against |
-| Full | a feature after design discussion, a bug with several causes | Standard plus Proposed change in detail, Open question, Acceptance, out of scope |
+| Full | a feature after design discussion, a bug with several causes | Standard plus Proposed change, Open question, Acceptance, out of scope |
 
 ### Title
 
@@ -95,22 +96,24 @@ Then wait at the gate. While the user questions the content, revise the drafts: 
 
 ```markdown
 **Severity: <level>**: <what fails, or who will notice>.        (bugs from testing)
-**Requirement:** <source: requirement or test IDs, client request> · Related: <refs>
+**Requirement:** <source: requirement or test IDs, client request>. Related: <refs>
+
+<2-3 plain sentences: what is wrong or what we're adding, who it's for, and why now.>
 
 Paths are relative to `<prefix>/`.                             (when most paths share a long prefix)
 
 ## Problem
-- <current behavior, with `path:line`>
+- <what the user sees, then the cause with `path:line`>
 - <how to reproduce, who is affected>
 
 ## Fix                                                         (or: ## Proposed change)
-- <what to change and where; the existing code to extend>
+- <what to change, in words; then where, with the existing code to extend>
 
 ## Open question                                               (when a decision is pending)
-**<question>** <the options>. <who decides>.
+<a question put to the person who decides, with what changes depending on the answer>
 
 ## Acceptance                                                  (full size)
-- <observable checks, and the tests that prove it>
+- <things a tester can try and see, and the tests that prove it>
 
 _Checked against `<sha>`._
 ```
@@ -121,6 +124,60 @@ _Checked against `<sha>`._
 - The issue reads as the user's own: no AI or agent attribution, no "drafted by".
 - Leave out secrets, tokens and personal contact details.
 - **Updating an issue:** read its current body just before writing. Keep what still holds, and end with `_Updated <date>: <what changed>._`
+
+### Writing for people
+
+The issue goes out under the user's name and gets read by developers, testers and leads, often quickly, between other work. Write it the way a teammate would explain the task at their desk: plain words, one point at a time, the reason before the detail. A reader who has to untangle a sentence twice, or who spots that a machine wrote it, skims the rest and trusts it less.
+
+**Make it easy to follow:**
+
+- **Start with the point.** The opening sentences say what's wrong or what we're building, and why, in words a tester or PM understands with no code open. Detail comes after.
+- **One idea per sentence, one change per bullet.** Split anything joined by semicolons, stacked parentheses or "i.e.". A bullet is a complete thought, not a fragment.
+- **Say it in words, then point at the code.** "Add a Catalog submenu under Check Out" first; the function name and `path:line` after, to show where. Code names don't explain anything on their own.
+- **Only the detail the implementer needs.** Keep what saves them real digging or stops a mistake: the place to start, a trap in the existing code, a contract with another repo. Leave the rest to them; an issue isn't a line-by-line spec.
+- **Use the team's words.** Name screens and features the way users and the design do. Explain an acronym or internal term the first time if a new teammate wouldn't know it.
+- **Acceptance is what someone can try:** "open Check Out > Catalog > Consignment and filter by date", not restated implementation.
+- **Plain formatting.** `##` headings and bullets are enough. No italic sub-headings, no `▸` or `·` in prose, no bold on every other phrase.
+
+**What makes it read as machine-written:**
+
+- **Clipped fragments and labels instead of sentences:** "Open question: …", "@name decides.", "Status: pending.", "Impact: high."
+- **Talking about someone instead of to them.** If a person has to answer, @mention them and ask them.
+- **Quoting a doc instead of saying what it means for the work:** `The design lists "View and Download" and "Edit" access.` says what's written, not why it matters.
+- **Vague wording that skips the specifics:** "when the backend lands", "as appropriate", "relevant changes". Name the thing, the PR, the screen.
+- **Typographic tells:** curly quotes and apostrophes (`“ ” ’`), em dashes, a bold lead-in on every bullet, lists of exactly three, and words like "ensure", "leverage", "robust", "seamless", "streamline". Use straight quotes, commas and plain verbs.
+- **Notes about the drafting** ("Two things I decided", "as discussed") and **wrap-ups** that repeat the issue ("In summary, …", "This will ensure …").
+
+Bad:
+
+```markdown
+- Check Out menu becomes: Pending, Approved, **Catalog ▸ Consignment, Back Order**. `getCheckoutDropDownItems` in `src/Components/HeaderSpan/headerDropDownItems.jsx:443` builds a flat list for antd `Dropdown`; add a `catalog` item with `children`. Its feature filter only checks top-level `name`, so filter the children too and drop Catalog when none are left.
+```
+
+Better:
+
+```markdown
+- Add a Catalog submenu under Check Out, after Pending and Approved, with Consignment and Back Order inside it.
+- The menu is built in `getCheckoutDropDownItems` (`src/Components/HeaderSpan/headerDropDownItems.jsx:443`). It only checks feature flags on top-level items, so it needs to check the submenu items too, and hide Catalog when neither page is enabled.
+```
+
+An open question is a question to a person. Ask them by name, give the options with what each would mean for the work, and say what you'll go with if they don't object, when there's a sensible default.
+
+Bad:
+
+```markdown
+Open question: Should Back Order get its own UAM functions when the backend lands? The design lists “View and Download” and “Edit” access. @MQzhiyong decides.
+```
+
+Better:
+
+```markdown
+For now this page uses the existing Approved-View permission. The design has separate "View and Download" and "Edit" access for Back Order, so we may want new UAM functions once the backend API is ready. New functions start disabled for every role except Admin until someone turns them on.
+
+@MQzhiyong, should we add them, or keep using Approved-View?
+```
+
+Before showing a draft, read it once as a teammate who has never seen this conversation. Could they say in one sentence what to do and why? Is there a line they'd have to read twice, or one that sounds like a report about someone instead of something said to them? Rewrite those.
 
 ### Draft files
 
@@ -178,3 +235,5 @@ Drop the last three lines when they're empty or set on request.
 | A bare `#N` for another repo's issue | `OWNER/REPO#N` |
 | Citing work that isn't pushed as done | Check the remote; report what's ahead |
 | Assigning or labelling unasked | Leave both unset and say so |
+| "Open question: … @name decides." | Ask @name directly, with what each answer changes |
+| Dense bullets of code names, semicolons and asides | Plain sentence first, then the `path:line`; one change per bullet |
